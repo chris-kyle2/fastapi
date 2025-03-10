@@ -1,10 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from .. import models, schema
 from .. database import  get_db
-from typing import List
 from .. import oauth2
-from typing import Optional
+import boto3
+import json
+from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+sqs_client = boto3.client(
+    "sqs",
+    region_name="us-east-1",
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+)
+ses_client = boto3.client(
+    "ses",
+    region_name="us-east-1",
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+)
+
+QUEUE_URL = os.getenv("SQS_QUEUE_URL")
+SOURCE_EMAIL = os.getenv("SOURCE_EMAIL")
 router = APIRouter(
     prefix="/votes",
     tags=["Votes"]
@@ -13,8 +34,15 @@ router = APIRouter(
 @router.post("/",status_code=status.HTTP_201_CREATED)
 def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
     post = db.query(models.Post).filter(models.Post.id == vote.post_id).first()
+    print(post)
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {vote.post_id} not found")
+    post_owner = db.query(models.User).filter(models.User.id == post.user_id).first()
+    post_owner_email = post_owner.email
+    print(f"Post ID: {post.id}")
+    print(f"Post owner ID: {post.user_id}")
+    print(f"Post owner email: {post_owner_email}")
+    print(f"Current user email: {current_user.email}")
     vote_query = db.query(models.Vote).filter(models.Vote.post_id == vote.post_id, models.Vote.user_id == current_user.id)
     found_vote = vote_query.first()
     if vote.dir == 1:
@@ -23,10 +51,48 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
         new_vote = models.Vote(post_id = vote.post_id, user_id = current_user.id)
         db.add(new_vote)
         db.commit()
-        return {"message": "successfully added vote"}
+        message = {
+        "post_owner_email_id": post_owner_email,
+        "voter_email_id": current_user.email,
+        "post_title": post.title,
+        "post_id": post.id,
+        "vote_direction": vote.dir,
+        "timestamp": str(datetime.now())  # Add timestamp to ensure message uniqueness
+          }
+       
+        print(f"Message being sent to SQS: {message}") 
+        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
+        
+        return {"message": f"Post was liked by the user {current_user.id}"}
+        
+        
     else:
         if not found_vote:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vote does not exist")
         vote_query.delete(synchronize_session=False)
         db.commit()
-        return {"message": "successfully deleted vote"}
+        message = {
+                "post_owner_email_id": post_owner_email,
+                "voter_email_id": current_user.email,
+                "post_title": post.title,
+                "post_id": post.id,
+                "vote_direction": vote.dir
+        }
+        print(message)
+        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
+        return {"message": f"Post was disliked by the user{current_user.id}"}
+        
+    
+   
+    
+    
+
+def purge_queue():
+    try:
+        sqs_client.purge_queue(QueueUrl=QUEUE_URL)
+        print("Queue purged successfully")
+    except Exception as e:
+        print(f"Error purging queue: {str(e)}")
+    
+    
+    
