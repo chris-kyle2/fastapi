@@ -12,14 +12,14 @@ from mangum import Mangum
 
 
 
-app = FastAPI()
+app = FastAPI(root_path="/")
 origins = ["*"]  # For production, replace with specific domain(s)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=3600,
@@ -47,5 +47,6 @@ async def add_security_headers(request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     return response
 
-handler = Mangum(app)
+handler = Mangum(app, lifespan="off")
+
 
