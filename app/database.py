@@ -9,7 +9,7 @@ load_dotenv()
 # Use environment variables with your RDS values
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "91cqwerty12345")
-DB_HOST = os.getenv("DB_HOST", "postgres.ckvisos8gemb.us-east-1.rds.amazonaws.com:5432/postgres")
+DB_HOST = os.getenv("DB_HOST", "postgres.ckvisos8gemb.us-east-1.rds.amazonaws.com")
 DB_PORT = int(os.getenv("DB_PORT", "5432"))
 DB_NAME = os.getenv("DB_NAME", "postgres")  # Default database name in RDS is "postgres"
 
