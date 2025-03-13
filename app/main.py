@@ -12,7 +12,7 @@ from mangum import Mangum
 
 
 
-app = FastAPI(root_path="/")
+app = FastAPI()
 origins = ["*"]  # For production, replace with specific domain(s)
 
 app.add_middleware(
