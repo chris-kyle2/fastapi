@@ -17,7 +17,7 @@ jobs:
       - name: Package FastAPI for Lambda
         run: |
             mkdir -p package
-            pip install --target ./package -r requirements.txt
+            pip install --target ./package  -r requirements.txt --no-cache-dir
             cp -r *.py package/
             cd package && zip -r ../fastapi-lambda.zip .
       - name: Deploy to AWS Lambda
