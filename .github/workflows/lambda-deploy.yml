@@ -19,6 +19,7 @@ jobs:
             mkdir -p package
             pip install --target ./package  -r requirements.txt --no-cache-dir
             pip install --target ./package  bcrypt
+            pip install --target ./package fastapi pydantic uvicorn sqlalchemy python-jose[cryptography] passlib python-multipart bcrypt
             (cd package; zip ../aws_lambda_artifact.zip -r .)
             cp -r app package/            
             cp -r alembic package/
