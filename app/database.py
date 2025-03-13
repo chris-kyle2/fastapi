@@ -21,15 +21,15 @@ try:
         SQLALCHEMY_DATABASE_URL,
         # RDS specific settings
         connect_args={
-            "connect_timeout": 60,  # 60 seconds connection timeout
+            "connect_timeout": 15,  # 60 seconds connection timeout
             "sslmode": "prefer",   # Require SSL for RDS connection
             "keepalives": 1,        # Enable keepalive
             "keepalives_idle": 30,  # Idle time before sending keepalive
             "keepalives_interval": 10  # Interval between keepalives
         },
-        pool_size=5,               # Maximum number of connections in the pool
-        max_overflow=2,            # Maximum number of connections that can be created beyond pool_size
-        pool_timeout=30,           # Timeout for getting a connection from the pool
+        pool_size=10,               # Maximum number of connections in the pool
+        max_overflow=5,            # Maximum number of connections that can be created beyond pool_size
+        pool_timeout=10,           # Timeout for getting a connection from the pool
         pool_recycle=1800,         # Recycle connections after 30 minutes
         pool_pre_ping=True,        # Pre-ping connections
         echo=True                  # Log all SQL queries (set to False in production)
