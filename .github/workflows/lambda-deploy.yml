@@ -1,5 +1,4 @@
-name: Deploy FastAPI app to AWS Lambda as a Docker container
-
+name: Deploy fastapi app to AWS Lambda
 on: 
   push:
     branches:
@@ -8,23 +7,23 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-      - name: Build Docker Image
-        run: docker build -t myapp:latest .
-
-      - name: Tag Docker Image
-        run: docker tag myapp:latest ${{ secrets.DOCKER_USERNAME }}/myapp:latest
-
-      - name: Push Docker Image to Docker Hub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/myapp:latest
-
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: Package FastAPI for Lambda
+        run: |
+            mkdir -p package
+            pip install --target ./package  -r requirements.txt --no-cache-dir
+            pip install --target ./package  bcrypt
+            (cd package; zip ../aws_lambda_artifact.zip -r .)
+            cp -r app package/            
+            cp -r alembic package/
+            cp -r alembic.ini package/
+            cd package && zip -r ../aws_lambda_artifact.zip .
       - name: Deploy to AWS Lambda
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -33,4 +32,4 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name FastAPI-Lambda \
-            --image-uri ${{ secrets.DOCKER_USERNAME }}/myapp:latest
+            --zip-file fileb://aws_lambda_artifact.zip
