@@ -18,7 +18,10 @@ jobs:
         run: |
             mkdir -p package
             pip install --target ./package  -r requirements.txt --no-cache-dir
-            cp -r *.py package/
+            cp -r app package/
+            
+            cp -r alembic package/
+            cp -r alembic.ini package/
             cd package && zip -r ../fastapi-lambda.zip .
       - name: Deploy to AWS Lambda
         env:
