@@ -1,50 +1,36 @@
-name: Deploy FastAPI to AWS Lambda
-
-on:
+name: Deploy fastapi app to AWS Lambda
+on: 
   push:
     branches:
-      - main  # Change this if needed
-
-env:
-  AWS_REGION: us-east-1  # Change this to your AWS region
-  ECR_REPOSITORY: fastapi-lambda  # Change to your ECR repository name
-  LAMBDA_FUNCTION_NAME: Fastapi-lambda  # Change to your AWS Lambda function name
-
-permissions:
-  contents: read
+      - main
 
 jobs:
   deploy:
-    name: Build and Deploy FastAPI Container
     runs-on: ubuntu-latest
-
     steps:
-    - name: 📥 Checkout Code
-      uses: actions/checkout@v4
-
-    - name: 🔑 Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
-
-    - name: 🔐 Login to Amazon ECR
-      run: |
-        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com
-
-    - name: 🏗️ Build Docker Image
-      run: |
-        docker build -t $ECR_REPOSITORY .
-
-    - name: 🏷️ Tag Docker Image
-      run: |
-        docker tag $ECR_REPOSITORY:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
-
-    - name: 📤 Push Docker Image to ECR
-      run: |
-        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
-
-    - name: 🚀 Deploy to AWS Lambda
-      run: |
-        aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --image-uri ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: Package FastAPI for Lambda
+        run: |
+            mkdir -p package
+            pip install --target ./package  -r requirements.txt --no-cache-dir
+            pip install --target ./package  bcrypt
+            pip install --target ./package fastapi pydantic uvicorn sqlalchemy python-jose[cryptography] passlib python-multipart bcrypt
+            (cd package; zip ../aws_lambda_artifact.zip -r .)
+            cp -r app package/            
+            cp -r alembic package/
+            cp -r alembic.ini package/
+            cd package && zip -r ../aws_lambda_artifact.zip .
+      - name: Deploy to AWS Lambda
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          aws lambda update-function-code \
+            --function-name FastAPI-Lambda \
+            --zip-file fileb://aws_lambda_artifact.zip
