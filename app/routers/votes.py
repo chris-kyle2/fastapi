@@ -7,8 +7,8 @@ import boto3
 import json
 from datetime import datetime
 import os
-from dotenv import load_dotenv
-
+from dotenv import load_dotenv   
+from ..utils import get_post_owner_preference
 load_dotenv()
 
 sqs_client = boto3.client(
@@ -19,6 +19,12 @@ sqs_client = boto3.client(
 )
 ses_client = boto3.client(
     "ses",
+    region_name="us-east-1",
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+)
+sns_client = boto3.client(
+    "sns",
     region_name="us-east-1",
     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
@@ -59,10 +65,12 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
         "vote_direction": vote.dir,
         "timestamp": str(datetime.now())  # Add timestamp to ensure message uniqueness
           }
-       
-        print(f"Message being sent to SQS: {message}") 
         sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
-        
+        preference = get_post_owner_preference(db,post_owner.id)
+        print(preference)
+        print(f"phone number: {preference.phone_number}")
+        if preference and preference.sms_enabled and preference.phone_number:
+            send_message_to_sqs(preference.phone_number,message)
         return {"message": f"Post was liked by the user {current_user.id}"}
         
         
@@ -80,9 +88,21 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
         }
         print(message)
         sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
+        preference = get_post_owner_preference(db,post_owner.id)
+        if preference and preference.sms_enabled and preference.phone_number:
+            send_message_to_sqs( preference.phone_number,message)
         return {"message": f"Post was disliked by the user{current_user.id}"}
         
-    
+def send_message_to_sqs(phone_number: str,message: str):
+    try:
+        message = {
+            "phone_number": phone_number,
+            "message": message
+        }
+        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
+    except Exception as e:
+        print(f"Error sending message to SQS: {str(e)}")
+
    
     
     

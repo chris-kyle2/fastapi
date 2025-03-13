@@ -28,6 +28,20 @@ class Vote(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), primary_key=True)
 
+class NotificationPreferences(Base):
+    __tablename__ = "notification_preferences"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    sms_enabled = Column(Boolean, nullable=False, server_default="false")
+    webhook_enabled = Column(Boolean, nullable=False, server_default="false")   
+    webhook_url = Column(String, nullable=True)
+    phone_number = Column(String, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False,server_default=text('now()'))
+    updated_at = Column(TIMESTAMP(timezone=True), nullable=False,server_default=text('now()'), onupdate=text('now()'))
+    user = relationship("User")
+
+
+
 def create_tables():
     try:
         Base.metadata.create_all(bind=engine)

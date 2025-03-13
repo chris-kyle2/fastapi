@@ -1,0 +1,31 @@
+name: Deploy fastapi app to AWS Lambda
+on: 
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: Package FastAPI for Lambda
+        run: |
+            mkdir -p package
+            pip install --target ./package -r requirements.txt
+            cp -r *.py package/
+            cd package && zip -r ../fastapi-lambda.zip .
+      - name: Deploy to AWS Lambda
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          aws lambda update-function-code \
+            --function-name FastAPI-Lambda \
+            --zip-file fileb://fastapi-lambda.zip

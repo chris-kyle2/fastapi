@@ -57,3 +57,22 @@ class TokenData(BaseModel):
 class Vote(BaseModel):
     post_id: int
     dir: Annotated[int,Field(le=1)]
+
+class NotificationPreferenceResponse(BaseModel):
+    sms_enabled: bool
+    webhook_enabled: bool
+    webhook_url: Optional[str] = None
+    phone_number: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    class Config:
+        orm_mode = True
+
+class NotificationPreferenceUpdate(BaseModel):
+    sms_enabled: bool
+    webhook_enabled: bool
+    webhook_url: Optional[str] = None
+    phone_number: Optional[str] = None
+    class Config:
+        orm_mode = True
+
