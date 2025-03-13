@@ -22,7 +22,7 @@ try:
         # RDS specific settings
         connect_args={
             "connect_timeout": 60,  # 60 seconds connection timeout
-            "sslmode": "require",   # Require SSL for RDS connection
+            "sslmode": "prefer",   # Require SSL for RDS connection
             "keepalives": 1,        # Enable keepalive
             "keepalives_idle": 30,  # Idle time before sending keepalive
             "keepalives_interval": 10  # Interval between keepalives
@@ -31,6 +31,7 @@ try:
         max_overflow=2,            # Maximum number of connections that can be created beyond pool_size
         pool_timeout=30,           # Timeout for getting a connection from the pool
         pool_recycle=1800,         # Recycle connections after 30 minutes
+        pool_pre_ping=True,        # Pre-ping connections
         echo=True                  # Log all SQL queries (set to False in production)
     )
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
