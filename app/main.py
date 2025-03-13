@@ -20,23 +20,8 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=[
-        "Content-Type",
-        "Authorization",
-        "X-Requested-With",
-        "Accept",
-        "Origin",
-        "Access-Control-Request-Method",
-        "Access-Control-Request-Headers",
-        "Access-Control-Allow-Origin",
-        "Access-Control-Allow-Credentials"
-    ],
-    expose_headers=[
-        "Content-Type",
-        "Authorization",
-        "Access-Control-Allow-Origin",
-        "Access-Control-Allow-Credentials"
-    ],
+    allow_headers=["*"],
+    expose_headers=["*"],
     max_age=3600,
 )
 
@@ -46,6 +31,9 @@ app.include_router(auth.router)
 app.include_router(votes.router)
 app.include_router(queryingpref.router)
 app.include_router(modifyingPref.router)
+@app.get("/")
+def root():
+    return {"message": "Hello World"}
 
 @app.get("/home")
 def home():
