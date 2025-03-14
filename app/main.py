@@ -1,20 +1,29 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from . import models
-from .routers import post,user,auth,votes,queryingpref,modifyingPref
+from .routers import post, user, auth, votes, queryingpref, modifyingPref
 from .database import engine
 from mangum import Mangum
-from app.routers import user
+import logging
+import json
+
+
 
 
 
 # models.Base.metadata.drop_all(bind=engine)
-
-
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI()
   # For production, replace with specific domain(s)
+
+@app.middleware("http")
+async def log_request(request: Request, call_next):
+    logger.info(json.dumps({"method": request.method, "url": str(request.url)}))
+    response = await call_next(request)
+    return response
 
 origins = ["*"]
 
