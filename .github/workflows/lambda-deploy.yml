@@ -116,6 +116,6 @@ jobs:
         if: failure()
         uses: slackapi/slack-github-action@v1
         with:
-          slack-message: 'Deployment failed!'
+          slack-message: 'Deployment failed please check the logs!'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
