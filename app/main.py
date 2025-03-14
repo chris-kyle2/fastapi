@@ -15,15 +15,19 @@ from mangum import Mangum
 app = FastAPI()
   # For production, replace with specific domain(s)
 
+origins = [
+    "https://s6lxblazkdroduvwr5kdndxfmq0qyzvu.lambda-url.us-east-1.on.aws"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,  # Only allow your function URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
-    max_age=3600,
 )
+
 
 
 
