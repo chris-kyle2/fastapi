@@ -19,6 +19,7 @@ def create_user(user: schema.User,db: Session= Depends(get_db)):
     user.password = hashed_password
     user_dict = user.dict(exclude={'id'})
     new_user = models.User(**user_dict)
+    print(new_user)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
