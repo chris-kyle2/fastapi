@@ -15,13 +15,11 @@ jobs:
         with:
           python-version: 3.9
       - name: Package FastAPI for Lambda
-        run: |
+        run: |  
             mkdir -p package
             pip install --target ./package  -r requirements.txt 
             (cd package; zip ../aws_lambda_artifact.zip -r .)
             cp -r app package/            
-            cp -r alembic package/
-            cp -r alembic.ini package/
             cd package && zip -r ../aws_lambda_artifact.zip .
       - name: Deploy to AWS Lambda
         env:
