@@ -4,7 +4,12 @@ from .. import models, schema
 from .. database import get_db
 from fastapi import status, Depends, HTTPException, APIRouter
 from ..utils import hash
+import logging
+import sys
 
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/users",
@@ -15,6 +20,9 @@ router = APIRouter(
 
 @router.post("/",status_code=status.HTTP_201_CREATED, response_model= schema.UserResponse)
 def create_user(user: schema.User,db: Session= Depends(get_db)):
+    logger.info("Received request to create user.")
+    print("Received request to create user.")
+    sys.stdout.flush()
     hashed_password = hash(user.password)
     user.password = hashed_password
     user_dict = user.dict(exclude={'id'})
@@ -23,12 +31,20 @@ def create_user(user: schema.User,db: Session= Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    logger.info(f"User created successfully: {new_user}")
+    print(f"User created successfully: {new_user}")
     return new_user
 
 @router.get("/{id}",response_model=schema.UserResponse)
 def get_user_by_id(id: int,db:Session= Depends(get_db)):
+    logger.info(f"Received request to fetch user with ID: {id}")
+    print(f"Received request to fetch user with ID: {id}")
+    sys.stdout.flush()
     user = db.query(models.User).filter(models.User.id == id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"user with id: {id} was not found")
+    logger.info(f"User found: {user.email}")
+    print(f"User found: {user.email}")
+    sys.stdout.flush()
     return user
