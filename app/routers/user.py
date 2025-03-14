@@ -23,7 +23,7 @@ def create_user(user: schema.User,db: Session= Depends(get_db)):
     try:
         print("Received request to create user.", flush=True)
 
-        print(f"User created successfully: {new_user}", flush=True)
+        
 
         sys.stdout.flush()
         hashed_password = hash(user.password)
