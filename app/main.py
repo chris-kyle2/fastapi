@@ -45,13 +45,7 @@ app.include_router(votes.router)
 app.include_router(queryingpref.router)
 app.include_router(modifyingPref.router)
 
-@app.middleware("http")
-async def add_security_headers(request, call_next):
-    response = await call_next(request)
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    return response
+
 
 handler = Mangum(app, lifespan="off")
 
