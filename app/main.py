@@ -4,6 +4,7 @@ from . import models
 from .routers import post,user,auth,votes,queryingpref,modifyingPref
 from .database import engine
 from mangum import Mangum
+from app.routers import user
 
 
 
