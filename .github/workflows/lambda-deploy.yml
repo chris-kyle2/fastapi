@@ -108,7 +108,10 @@ jobs:
         if: success()
         uses: slackapi/slack-github-action@v1
         with:
-          slack-message: 'All Lambdas and FastAPI app deployed successfully!'
+          payload: |
+            {
+              "text": "🚀 *${{ github.actor }}* pushed to *${{ github.repository }}*:\n\n📌 _${{ github.event.head_commit.message }}_\n🔗 [View Changes](${{ github.event.compare }})"
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -116,6 +119,9 @@ jobs:
         if: failure()
         uses: slackapi/slack-github-action@v1
         with:
-          slack-message: 'Deployment failed please check the logs!'
+          payload: |
+            {
+              "text": "🚀 *${{ github.actor }}* pushed to *${{ github.repository }}*:\n\n📌 _${{ github.event.head_commit.message }}_\n🔗 [View Changes](${{ github.event.compare }})"
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
