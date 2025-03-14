@@ -1,5 +1,6 @@
-name: Deploy fastapi app to AWS Lambda
-on: 
+name: Deploy FastAPI and Lambdas
+
+on:
   push:
     branches:
       - main
@@ -8,20 +9,53 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Setup python
+
+      # Step 2: Set up Python
+      - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
           python-version: 3.9
-      - name: Package FastAPI for Lambda
-        run: |  
-            mkdir -p package
-            pip install --target ./package  -r requirements.txt 
-            (cd package; zip ../aws_lambda_artifact.zip -r .)
-            cp -r app package/            
-            cd package && zip -r ../aws_lambda_artifact.zip .
-      - name: Deploy to AWS Lambda
+
+      # Step 3: Cache dependencies
+      - name: Cache Python dependencies
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: ./.venv
+          key: deps-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            deps-
+
+      # Step 4: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 5: Validate AWS credentials
+      - name: Validate AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          aws sts get-caller-identity
+
+      # Step 6: Deploy FastAPI App (if changed)
+      - name: Package FastAPI App
+        if: contains(github.event.commits[0].modified, 'app/')
+        run: |
+          mkdir -p package_fastapi
+          pip install --target ./package_fastapi -r requirements.txt
+          cp -r app package_fastapi/
+          cd package_fastapi && zip -r ../fastapi_artifact.zip .
+      - name: Deploy FastAPI App
+        if: contains(github.event.commits[0].modified, 'app/')
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -29,4 +63,59 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name fastapi-lambda \
-            --zip-file fileb://aws_lambda_artifact.zip
+            --zip-file fileb://fastapi_artifact.zip
+
+      # Step 7: Deploy Like Notification Lambda (if changed)
+      - name: Package Like Notification Lambda
+        if: contains(github.event.commits[0].modified, 'like_lambda/')
+        run: |
+          mkdir -p package_like_lambda
+          pip install --target ./package_like_lambda -r like_lambda/requirements.txt
+          cp -r like_lambda/lambda_function.py package_like_lambda/
+          cd package_like_lambda && zip -r ../like_lambda_artifact.zip .
+      - name: Deploy Like Notification Lambda
+        if: contains(github.event.commits[0].modified, 'like_lambda/')
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          aws lambda update-function-code \
+            --function-name vote-notification-processor \
+            --zip-file fileb://like_lambda_artifact.zip
+
+      # Step 8: Deploy Milestone Lambda (if changed)
+      - name: Package Milestone Lambda
+        if: contains(github.event.commits[0].modified, 'milestone-lambda/')
+        run: |
+          mkdir -p package_milestone_lambda
+          pip install --target ./package_milestone_lambda -r milestone-lambda/requirements.txt
+          cp -r milestone-lambda/lambda_function.py package_milestone_lambda/
+          cd package_milestone_lambda && zip -r ../milestone_lambda_artifact.zip .
+      - name: Deploy Milestone Lambda
+        if: contains(github.event.commits[0].modified, 'milestone-lambda/')
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          aws lambda update-function-code \
+            --function-name milestone-and-promotions \
+            --zip-file fileb://milestone_lambda_artifact.zip
+
+      # Step 9: Notify Slack on success or failure
+      - name: Notify Slack on success
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          slack-message: 'All Lambdas and FastAPI app deployed successfully!'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          slack-message: 'Deployment failed!'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
