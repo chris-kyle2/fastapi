@@ -21,17 +21,20 @@ router = APIRouter(
 @router.post("/",status_code=status.HTTP_201_CREATED, response_model= schema.UserResponse)
 def create_user(user: schema.User,db: Session= Depends(get_db)):
     try:
-        logger.info("Received request to create user.")
-        print("Received request to create user.")
+        print("Received request to create user.", flush=True)
+
+        print(f"User created successfully: {new_user}", flush=True)
+
         sys.stdout.flush()
         hashed_password = hash(user.password)
         user.password = hashed_password
         user_dict = user.dict(exclude={'id'})
         new_user = models.User(**user_dict)
-        print(new_user)
+        print(f"Prepared new user: {new_user}", flush=True)
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
+        print(f"User created successfully: {new_user}", flush=True)
         logger.info(f"User created successfully: {new_user}")
         print(f"User created successfully: {new_user}")
         return new_user
