@@ -9,7 +9,7 @@ router = APIRouter(
     tags=["Notification Preferences"]
 )
 
-@router.put("/", response_model=schema.NotificationPreferenceResponse)
+@router.put("/modify_current_user_preferences", response_model=schema.NotificationPreferenceResponse)
 def update_user_preferences(
     preference_update: schema.NotificationPreferenceUpdate,
     db: Session = Depends(get_db),

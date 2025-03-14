@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=List[schema.PostVote])
+@router.get("/get_all_posts", response_model=List[schema.PostVote])
 def get_posts(db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
     results = db.query(models.Post, func.count(models.Vote.post_id).label("votes"))\
         .join(models.Vote, models.Post.id == models.Vote.post_id, isouter=True)\
@@ -25,7 +25,7 @@ def get_posts(db: Session = Depends(get_db), current_user: models.User = Depends
     
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED,response_model=schema.PostResponse)
+@router.post("/create", status_code=status.HTTP_201_CREATED,response_model=schema.PostResponse)
 def create_post(post: schema.Post, db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
     # Convert Pydantic model to dict and exclude id (auto-generated)
     post_dict = post.dict(exclude={'id'})
