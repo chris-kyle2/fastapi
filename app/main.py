@@ -13,11 +13,11 @@ from mangum import Mangum
 
 
 app = FastAPI()
-origins = ["*"]  # For production, replace with specific domain(s)
+  # For production, replace with specific domain(s)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,12 +25,9 @@ app.add_middleware(
     max_age=3600,
 )
 
-app.include_router(post.router)
-app.include_router(user.router)
-app.include_router(auth.router)
-app.include_router(votes.router)
-app.include_router(queryingpref.router)
-app.include_router(modifyingPref.router)
+
+
+
 @app.get("/")
 def root():
     return {"message": "Hello World"}
@@ -38,6 +35,13 @@ def root():
 @app.get("/home")
 def home():
     return {"message": "Hello from FastAPI on AWS Lambda!"}
+
+app.include_router(post.router)
+app.include_router(user.router)
+app.include_router(auth.router)
+app.include_router(votes.router)
+app.include_router(queryingpref.router)
+app.include_router(modifyingPref.router)
 
 @app.middleware("http")
 async def add_security_headers(request, call_next):
