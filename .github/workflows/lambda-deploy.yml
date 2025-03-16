@@ -48,7 +48,7 @@ jobs:
 
       # Step 6: Deploy FastAPI App (if changed)
       - name: Package FastAPI App
-        if: contains(github.event.commits[0].modified, 'app/')
+        if: contains(join(github.event.commits[0].modified, ','), 'app/')
         run: |
           mkdir -p package_fastapi
           pip install --target ./package_fastapi -r requirements.txt
