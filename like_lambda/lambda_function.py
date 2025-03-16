@@ -83,16 +83,19 @@ def send_webhook(webhook_url, body):
         return
     
     # Convert body to a formatted string for Slack
+    vote_direction = body.get('vote_direction')
+    if vote_direction == 1:
+        vote_direction = "Like"
+    else:
+        vote_direction = "Dislike"
+    # Convert body to a formatted string for Slack
     formatted_text = f"""
     *New Notification* 🎉  
     📩 *Post Owner:* {body.get('post_owner_email_id')}  
     👍 *Voter:* {body.get('voter_email_id')}  
     📝 *Post Title:* {body.get('post_title')}  
     ⏰ *Timestamp:* {body.get('timestamp')}
-       if vote_direction == 1:
-           *Vote Direction:* Like
-       else:
-           *Vote Direction:* Dislike
+    👍 *Vote Direction:* {vote_direction}
     """
 
     payload = {
