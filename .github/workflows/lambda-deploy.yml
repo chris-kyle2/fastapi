@@ -57,7 +57,6 @@ jobs:
           
 
       - name: Deploy FastAPI App
-        if: contains(github.event.commits[0].modified, 'app/')
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -85,7 +84,6 @@ jobs:
           fi
 
       - name: Deploy Like Notification Lambda
-        if: contains(github.event.commits[0].modified, 'like_lambda/')
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -113,7 +111,6 @@ jobs:
           fi
 
       - name: Deploy Milestone Lambda
-        if: contains(github.event.commits[0].modified, 'milestone-lambda/')
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
