@@ -57,9 +57,13 @@ jobs:
     
           if echo "$CHANGED_FILES" | grep -q '^app/'; then
             echo "Changes detected in app/, packaging FastAPI app..."
+            
             mkdir -p package_fastapi
+            echo "Installing dependencies..."
             pip install --target ./package_fastapi -r requirements.txt
+            echo "Copying app..."
             cp -r app package_fastapi/
+            echo "Zipping..."
             cd package_fastapi && zip -r ../fastapi_artifact.zip .
           else
             echo "No changes in app/, skipping package."
