@@ -11,33 +11,42 @@ from dotenv import load_dotenv
 from ..utils import get_post_owner_preference
 load_dotenv()
 
-sqs_client = boto3.client(
-    "sqs",
-    region_name="us-east-1",
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
-)
-ses_client = boto3.client(
-    "ses",
-    region_name="us-east-1",
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
-)
-sns_client = boto3.client(
-    "sns",
-    region_name="us-east-1",
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
-)
+# sqs_client = boto3.client(
+#     "sqs",
+#     region_name="us-east-1",
+#     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+#     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+# )
+# ses_client = boto3.client(
+#     "ses",
+#     region_name="us-east-1",
+#     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+#     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+# )
+# sns_client = boto3.client(
+#     "sns",
+#     region_name="us-east-1",
+#     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+#     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+# )
+sqs_client = boto3.client("sqs", region_name="us-east-1") 
+ses_client = boto3.client("ses", region_name="us-east-1")
+sns_client = boto3.client("sns", region_name="us-east-1")
 
 QUEUE_URL = os.getenv("SQS_QUEUE_URL")
 SOURCE_EMAIL = os.getenv("SOURCE_EMAIL")
+
+if not QUEUE_URL:
+    raise RuntimeError("QUEUE_URL environment variable is missing!")
+if not SOURCE_EMAIL:
+    raise RuntimeError("SOURCE_EMAIL environment variable is missing!")
+
 router = APIRouter(
     prefix="/votes",
     tags=["Votes"]
 )
 
-@router.post("/post_vote",status_code=status.HTTP_201_CREATED)
+@router.post("",status_code=status.HTTP_201_CREATED)
 def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
     post = db.query(models.Post).filter(models.Post.id == vote.post_id).first()
     print(post)
