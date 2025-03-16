@@ -48,12 +48,18 @@ jobs:
 
       # Step 6: Deploy FastAPI App (if changed)
       - name: Package FastAPI App
-        if: contains(join(github.event.commits[0].modified, ','), 'app/')
         run: |
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          echo "Changed files: $CHANGED_FILES"
+          if echo "$CHANGED_FILES" | grep -q '^app/'; then
+          echo "Changes detected in app/, packaging FastAPI app..."
           mkdir -p package_fastapi
           pip install --target ./package_fastapi -r requirements.txt
           cp -r app package_fastapi/
           cd package_fastapi && zip -r ../fastapi_artifact.zip .
+          else
+            echo "No changes in app/, skipping package."
+          fi
       - name: Deploy FastAPI App
         if: contains(github.event.commits[0].modified, 'app/')
         env:

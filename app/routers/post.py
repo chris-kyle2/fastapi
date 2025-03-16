@@ -83,7 +83,7 @@ def update_post_by_id(id: int, updated_post: schema.UpdatePost, db: Session = De
     
     if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
-                          detail=f"post with id: {id} was not found")
+                          detail=f"post with the id: {id} was not found")
     if post.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                           detail=f"Not authorized to perform requested action")
@@ -101,7 +101,7 @@ def update_post_field_by_id(id: int, updated_post: schema.UpdatePost, db: Sessio
     
     if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
-                          detail=f"post with id: {id} was not found")
+                          detail=f"post with the id: {id} was not found")
     if post.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                           detail=f"Not authorized to perform requested action")
