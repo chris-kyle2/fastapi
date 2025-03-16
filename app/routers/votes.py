@@ -76,7 +76,6 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
             "vote_direction": vote.dir,
             "timestamp": str(datetime.now()),  # Add timestamp to ensure message uniqueness
             "preference": {
-                    "email_enabled": preference.email_enabled,
                     "sms_enabled": preference.sms_enabled,
                     "phone_number": preference.phone_number,
                     "webhook_enabled": preference.webhook_enabled,

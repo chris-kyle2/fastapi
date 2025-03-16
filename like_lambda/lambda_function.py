@@ -37,7 +37,7 @@ def lambda_handler(event, context):
             
             if preference.get("sms_enabled"):
                 try:
-                    send_sms(preference.get("phone_number"),f"Your post '{post_title}' received a new like! {voter_email}")
+                    send_sms(phone_number=preference.get("phone_number"),post_title=post_title,voter_email=voter_email)
                 except Exception as e:
                     logger.error(f"❌ Error sending SMS: {str(e)}")
             if post_owner_email:
