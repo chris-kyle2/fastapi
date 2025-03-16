@@ -75,9 +75,19 @@ def send_sms(phone_number,post_title,voter_email):
     logger.info(f"📩 SMS sent to {phone_number}")
 
 def send_webhook(webhook_url, body):
+    if not webhook_url:
+        logger.error("❌ Webhook URL is missing or invalid.")
+        return
+
     try:
         response = requests.post(webhook_url, json=body, timeout=5)
-        response.raise_for_status()  # Raises an error for bad status codes
-        logger.info(f"🔗 Webhook sent to {webhook_url}")
-    except requests.exceptions.RequestException as e:
-        logger.error(f"❌ Webhook failed for {webhook_url}: {str(e)}")
+        response.raise_for_status()  # Raises an error for 4xx/5xx responses
+        logger.info(f"✅ Webhook sent successfully to {webhook_url}")
+    except requests.exceptions.HTTPError as http_err:
+        logger.error(f"❌ HTTP Error: {http_err} - Response: {response.text}")
+    except requests.exceptions.ConnectionError:
+        logger.error(f"❌ Connection Error: Unable to reach {webhook_url}")
+    except requests.exceptions.Timeout:
+        logger.error(f"⏳ Timeout: {webhook_url} took too long to respond")
+    except requests.exceptions.RequestException as err:
+        logger.error(f"❌ Unexpected error: {err}")
