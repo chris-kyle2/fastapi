@@ -18,6 +18,7 @@ SOURCE_EMAIL = os.environ["SOURCE_EMAIL"]
 def lambda_handler(event, context):
     try:
         logger.info(f"Received event: {json.dumps(event)}")
+        print("event",event)
 
         for record in event.get("Records", []):
             body = json.loads(record.get("body", "{}"))  # Parse JSON safely

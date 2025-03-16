@@ -54,10 +54,10 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {vote.post_id} not found")
     post_owner = db.query(models.User).filter(models.User.id == post.user_id).first()
     post_owner_email = post_owner.email
-    print(f"Post ID: {post.id}")
-    print(f"Post owner ID: {post.user_id}")
-    print(f"Post owner email: {post_owner_email}")
-    print(f"Current user email: {current_user.email}")
+    # print(f"Post ID: {post.id}")
+    # print(f"Post owner ID: {post.user_id}")
+    # print(f"Post owner email: {post_owner_email}")
+    # print(f"Current user email: {current_user.email}")
     vote_query = db.query(models.Vote).filter(models.Vote.post_id == vote.post_id, models.Vote.user_id == current_user.id)
     found_vote = vote_query.first()
     if vote.dir == 1:
@@ -66,20 +66,24 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
         new_vote = models.Vote(post_id = vote.post_id, user_id = current_user.id)
         db.add(new_vote)
         db.commit()
-        message = {
-        "post_owner_email_id": post_owner_email,
-        "voter_email_id": current_user.email,
-        "post_title": post.title,
-        "post_id": post.id,
-        "vote_direction": vote.dir,
-        "timestamp": str(datetime.now())  # Add timestamp to ensure message uniqueness
-          }
-        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
         preference = get_post_owner_preference(db,post_owner.id)
-        print(preference)
-        print(f"phone number: {preference.phone_number}")
-        if preference and preference.sms_enabled and preference.phone_number:
-            send_message_to_sqs(preference.phone_number,message)
+        if preference:
+            message = {
+            "post_owner_email_id": post_owner_email,
+            "voter_email_id": current_user.email,
+            "post_title": post.title,
+            "post_id": post.id,
+            "vote_direction": vote.dir,
+            "timestamp": str(datetime.now()),  # Add timestamp to ensure message uniqueness
+            "preference": {
+                    "email_enabled": preference.email_enabled,
+                    "sms_enabled": preference.sms_enabled,
+                    "phone_number": preference.phone_number,
+                    "webhook_enabled": preference.webhook_enabled,
+                    "webhook_url": preference.webhook_url
+                }
+        }
+        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
         return {"message": f"Post was liked by the user {current_user.id}"}
         
         
@@ -88,33 +92,24 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vote does not exist")
         vote_query.delete(synchronize_session=False)
         db.commit()
+        preference = get_post_owner_preference(db,post_owner.id)
         message = {
                 "post_owner_email_id": post_owner_email,
                 "voter_email_id": current_user.email,
                 "post_title": post.title,
                 "post_id": post.id,
-                "vote_direction": vote.dir
+                "vote_direction": vote.dir,
+                "preference": {
+
+                    "sms_enabled": preference.sms_enabled,
+                    "webhook_enabled": preference.webhook_enabled,
+                    "webhook_url": preference.webhook_url,
+                    "phone_number": preference.phone_number
+                }
         }
         print(message)
         sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
-        preference = get_post_owner_preference(db,post_owner.id)
-        if preference and preference.sms_enabled and preference.phone_number:
-            send_message_to_sqs( preference.phone_number,message)
         return {"message": f"Post was disliked by the user{current_user.id}"}
-        
-def send_message_to_sqs(phone_number: str,message: str):
-    try:
-        message = {
-            "phone_number": phone_number,
-            "message": message
-        }
-        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
-    except Exception as e:
-        print(f"Error sending message to SQS: {str(e)}")
-
-   
-    
-    
 
 def purge_queue():
     try:
