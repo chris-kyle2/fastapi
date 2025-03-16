@@ -30,6 +30,7 @@ def lambda_handler(event, context):
             post_title = body.get("post_title")
             vote_direction = body.get("vote_direction")
             preference = body.get("preference")
+            print("webhook_url",preference.get("webhook_url"))
             
             
             if preference.get("webhook_enabled"):
