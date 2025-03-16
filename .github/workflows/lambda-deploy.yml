@@ -68,20 +68,12 @@ jobs:
 
       # Step 7: Deploy Like Notification Lambda (if changed)
       - name: Package Like Notification Lambda
-        run: |
-          git fetch origin main --depth=2
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-          echo "Changed files: $CHANGED_FILES"
-    
-          if echo "$CHANGED_FILES" | grep -q '^like_lambda/'; then
-            echo "Changes detected in like_lambda/, packaging Like Notification Lambda..."
+        run: |    
             mkdir -p package_like_lambda
             pip install --target ./package_like_lambda -r like_lambda/requirements.txt
             cp -r like_lambda/lambda_function.py package_like_lambda/
             cd package_like_lambda && zip -r ../like_lambda_artifact.zip .
-          else
-            echo "No changes in like_lambda/, skipping package."
-          fi
+          
 
       - name: Deploy Like Notification Lambda
         env:
@@ -96,21 +88,14 @@ jobs:
       # Step 8: Deploy Milestone Lambda (if changed)
       - name: Package Milestone Lambda
         run: |
-          git fetch origin main --depth=2
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-          echo "Changed files: $CHANGED_FILES"
-          
-          if echo "$CHANGED_FILES" | grep -q '^milestone-lambda/'; then
-            echo "Changes detected in milestone-lambda/, packaging Milestone Lambda..."
+          mkdir -p package_milestone_lambda
             mkdir -p package_milestone_lambda
             pip install --target ./package_milestone_lambda -r milestone-lambda/requirements.txt
             cp -r milestone-lambda/lambda_function.py package_milestone_lambda/
             cd package_milestone_lambda && zip -r ../milestone_lambda_artifact.zip .
-          else
-            echo "No changes in milestone-lambda/, skipping package."
-          fi
 
       - name: Deploy Milestone Lambda
+        
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
