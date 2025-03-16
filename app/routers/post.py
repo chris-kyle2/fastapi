@@ -54,7 +54,7 @@ def get_post_by_id(id: int, db: Session = Depends(get_db),current_user: int = De
                           detail=f"post with id: {id} was not found")
     if post[0].user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
-                          detail=f"Not authorized to perform requested action")
+                          detail=f"Not authorized to perform the requested action")
     return post
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -68,7 +68,7 @@ def delete_post_by_id(id: int, db: Session = Depends(get_db),current_user: model
                           detail=f"post with id: {id} was not found")
     if post.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
-                          detail=f"Not authorized to perform requested action")
+                          detail=f"Not authorized to perform the requested action")
     
     post_query.delete(synchronize_session=False)
     db.commit()
@@ -86,7 +86,7 @@ def update_post_by_id(id: int, updated_post: schema.UpdatePost, db: Session = De
                           detail=f"post with the id: {id} was not found")
     if post.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
-                          detail=f"Not authorized to perform requested action")
+                          detail=f"Not authorized to perform the requested action")
     
     post_query.update(updated_post.dict(exclude={'id'}), synchronize_session=False)
     db.commit()
@@ -104,7 +104,7 @@ def update_post_field_by_id(id: int, updated_post: schema.UpdatePost, db: Sessio
                           detail=f"post with the id: {id} was not found")
     if post.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
-                          detail=f"Not authorized to perform requested action")
+                          detail=f"Not authorized to perform the requested action")
     
     update_data = updated_post.dict(exclude_unset=True)
     
