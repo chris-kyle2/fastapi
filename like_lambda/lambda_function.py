@@ -74,14 +74,30 @@ def send_sms(phone_number,post_title,voter_email):
     )
     logger.info(f"📩 SMS sent to {phone_number}")
 
+import json
+import requests
+
 def send_webhook(webhook_url, body):
     if not webhook_url:
         logger.error("❌ Webhook URL is missing or invalid.")
         return
+    
+    # Convert body to a formatted string for Slack
+    formatted_text = f"""
+    *New Like Notification* 🎉  
+    📩 *Post Owner:* {body.get('post_owner_email_id')}  
+    👍 *Voter:* {body.get('voter_email_id')}  
+    📝 *Post Title:* {body.get('post_title')}  
+    ⏰ *Timestamp:* {body.get('timestamp')}
+    """
+
+    payload = {
+        "text": formatted_text  # Slack requires this field
+    }
 
     try:
-        response = requests.post(webhook_url, json=body, timeout=5)
-        response.raise_for_status()  # Raises an error for 4xx/5xx responses
+        response = requests.post(webhook_url, json=payload, timeout=5)
+        response.raise_for_status()
         logger.info(f"✅ Webhook sent successfully to {webhook_url}")
     except requests.exceptions.HTTPError as http_err:
         logger.error(f"❌ HTTP Error: {http_err} - Response: {response.text}")
