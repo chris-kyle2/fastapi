@@ -1,11 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from . import models
 from .routers import post, user, auth, votes, queryingpref, modifyingPref
-from .database import engine
 from mangum import Mangum
 import logging
 import json
+from .config import settings
 
 
 
