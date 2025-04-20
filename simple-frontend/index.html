@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="vapid-public-key" content="BGrvddJ7X5ycoFZKGRLBKtwQU0SVlv2C8V10ppAzek4_mDvxfWWswb0MSoE-8-4TBfDWl9uH7xJhjd6GEfPHaOo=">
+    <meta name="service-worker-url" content="/static/sw.js">
+    <title>FastAPI Blog Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+    <script>
+        // Add your VAPID public key here
+        const PUBLIC_VAPID_KEY = 'BGrvddJ7X5ycoFZKGRLBKtwQU0SVlv2C8V10ppAzek4_mDvxfWWswb0MSoE-8-4TBfDWl9uH7xJhjd6GEfPHaOo=';
+        
+        // Debug information
+        console.log('VAPID Public Key:', 'BGrvddJ7X5ycoFZKGRLBKtwQU0SVlv2C8V10ppAzek4_mDvxfWWswb0MSoE-8-4TBfDWl9uH7xJhjd6GEfPHaOo=');
+        
+        // Check service worker support
+        if ('serviceWorker' in navigator) {
+            console.log('Service Worker is supported');
+        } else {
+            console.log('Service Worker is NOT supported');
+        }
+        
+        // Check push notification support
+        if ('PushManager' in window) {
+            console.log('Push API is supported');
+        } else {
+            console.log('Push API is NOT supported');
+        }
+    </script>
+    <style>
+        .hidden {
+            display: none;
+        }
+        .post-card {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .vote-btn {
+            cursor: pointer;
+        }
+        
+        #debug-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Blog Platform</a>
+            <div class="navbar-nav ms-auto">
+                <button class="btn btn-outline-light me-2" id="loginBtn">Login</button>
+                <button class="btn btn-light" id="registerBtn">Register</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Auth Forms -->
+        <div id="authForms">
+            <!-- Register Form -->
+            <div class="card mb-4 hidden" id="registerForm">
+                <div class="card-header">Register</div>
+                <div class="card-body">
+                    <form id="registerFormData">
+                        <div class="mb-3">
+                            <label for="regEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="regEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="regPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Register</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Login Form -->
+            <div class="card mb-4 hidden" id="loginForm">
+                <div class="card-header">Login</div>
+                <div class="card-body">
+                    <form id="loginFormData">
+                        <div class="mb-3">
+                            <label for="loginEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="loginEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="loginPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Post Form -->
+        <div class="card mb-4 hidden" id="createPostForm">
+            <div class="card-header">Create New Post</div>
+            <div class="card-body">
+                <form id="postFormData">
+                    <div class="mb-3">
+                        <label for="postTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="postTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="postContent" class="form-label">Content</label>
+                        <textarea class="form-control" id="postContent" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="postRating" class="form-label">Rating (Optional)</label>
+                        <input type="number" class="form-control" id="postRating">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="postPublished" checked>
+                        <label class="form-check-label" for="postPublished">Published</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Post</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Notification Preferences -->
+        <div class="card mb-4 hidden" id="notificationPrefs">
+            <div class="card-header">Notification Preferences</div>
+            <div class="card-body">
+                <form id="notificationPrefsForm">
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="smsEnabled">
+                        <label class="form-check-label" for="smsEnabled">Enable SMS Notifications</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phoneNumber" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phoneNumber">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="webhookEnabled">
+                        <label class="form-check-label" for="webhookEnabled">Enable Webhook Notifications</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="webhookUrl" class="form-label">Webhook URL</label>
+                        <input type="url" class="form-control" id="webhookUrl">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="pushEnabled">
+                        <label class="form-check-label" for="pushEnabled">Enable Push Notifications</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Preferences</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Posts List -->
+        <div id="postsList" class="mt-4"></div>
+    </div>
+
+    <!-- Debug Information -->
+    <div id="debug-info" class="hidden">
+        <div>Notification Permission: <span id="notification-permission">checking...</span></div>
+        <div>Service Worker: <span id="sw-status">checking...</span></div>
+        <div>Push Subscription: <span id="push-status">checking...</span></div>
+    </div>
+
+    <script src="/static/main.js"></script>
+    <script>
+        // Show debug info in development
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            document.getElementById('debug-info').classList.remove('hidden');
+            
+            // Update notification permission status
+            function updateNotificationStatus() {
+                document.getElementById('notification-permission').textContent = Notification.permission;
+            }
+            updateNotificationStatus();
+            
+            // Update service worker status
+            navigator.serviceWorker.getRegistration('/static/sw.js').then(registration => {
+                document.getElementById('sw-status').textContent = registration ? 'Registered' : 'Not Registered';
+            });
+            
+            // Update push subscription status
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.pushManager.getSubscription().then(subscription => {
+                        document.getElementById('push-status').textContent = subscription ? 'Subscribed' : 'Not Subscribed';
+                    });
+                });
+            }
+        }
+    </script>
+</body>
+</html>
