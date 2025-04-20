@@ -96,6 +96,8 @@ def vote(
             "url": f"/posts/{post.id}"
         }
         push_result = send_web_push(subscription_info, payload)
+        notification_sent = push_result["status"] == "success"
+
         if push_result["status"] == "error":
             print(f"[Push Error] {push_result['message']}")
         else:
@@ -112,13 +114,13 @@ def vote(
         new_vote = models.Vote(post_id=vote.post_id, user_id=current_user.id)
         db.add(new_vote)
         db.commit()
-        return {"message": f"Post was liked by user {current_user.id}"}
+        return {"message": f"Post was liked by user {current_user.id}", "notification_sent": notification_sent}
     else:
         if not found_vote:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vote does not exist")
         vote_query.delete(synchronize_session=False)
         db.commit()
-        return {"message": f"Vote was removed by user {current_user.id}"}
+        return {"message": f"Vote was removed by user {current_user.id}", "notification_sent": notification_sent}
 
 def purge_queue():
     try:
