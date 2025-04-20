@@ -1,7 +1,7 @@
-# 🛠️ Secure, Scalable, and Performant Static Website on AWS
+# 🛠️ Secure, Scalable, and Performant Static Website on AWS With Scalable Notification system and Push Notifications
 
 ## 📚 Overview
-This project implements a fully serverless and secure static web application infrastructure using AWS services. The primary goals are performance, scalability, security, and cost-effectiveness. The frontend is built with HTML, CSS, and JavaScript and is deployed on AWS S3. The backend is a FastAPI application deployed on AWS Lambda using API Gateway. The entire system is integrated and protected with security services like AWS WAF and CloudFront, monitored using CloudWatch, and documented for future teams or audits.
+This project implements a fully serverless and secure static web application infrastructure using AWS services. The primary goals are performance, scalability, security, and cost-effectiveness. The frontend is built with HTML, CSS, and JavaScript and is deployed on AWS S3. The backend is a FastAPI application deployed on AWS Lambda. The entire system is integrated and protected with security services like AWS WAF and CloudFront, monitored using CloudWatch, and documented for future teams or audits.
 
 All AWS Lambda functions are deployed and managed using **GitHub Actions** to enable a seamless CI/CD pipeline.
 
