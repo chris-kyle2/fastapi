@@ -1,3 +1,7 @@
 __pycache__
 .env
 venv/
+push-test
+simple-frontend
+generate_vapid_keys.py
+vapid_private.pem

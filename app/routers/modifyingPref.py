@@ -26,7 +26,11 @@ def update_user_preferences(
             sms_enabled=preference_update.sms_enabled,
             webhook_enabled=preference_update.webhook_enabled,
             webhook_url=preference_update.webhook_url,
-            phone_number=preference_update.phone_number
+            phone_number=preference_update.phone_number,
+            push_enabled=preference_update.push_enabled,
+            push_endpoint=preference_update.push_endpoint,
+            push_p256dh=preference_update.push_p256dh,
+            push_auth=preference_update.push_auth
         )
         db.add(preference)
         db.commit()
@@ -42,6 +46,14 @@ def update_user_preferences(
         preference.webhook_url = preference_update.webhook_url
     if preference_update.phone_number is not None:
         preference.phone_number = preference_update.phone_number
+    if preference_update.push_enabled is not None:
+        preference.push_enabled = preference_update.push_enabled
+    if preference_update.push_endpoint is not None:
+        preference.push_endpoint = preference_update.push_endpoint
+    if preference_update.push_p256dh is not None:
+        preference.push_p256dh = preference_update.push_p256dh
+    if preference_update.push_auth is not None:
+        preference.push_auth = preference_update.push_auth
 
     # Commit changes
     db.commit()

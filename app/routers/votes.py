@@ -82,8 +82,10 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
                     "webhook_url": preference.webhook_url
                 }
         }
-        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
-        return {"message": f"Post was liked by the user {current_user.id}"}
+            sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
+            return {"message": f"Post was liked by the user {current_user.id}"}
+        else:
+            return {"message": f"No preference found for the post owner {post_owner.id}"}
         
         
     else:
@@ -109,6 +111,7 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
         print(message)
         sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
         return {"message": f"Post was disliked by the user{current_user.id}"}
+    
 
 def purge_queue():
     try:
