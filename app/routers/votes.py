@@ -1,35 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from .. import models, schema
-from .. database import  get_db
+from ..database import get_db
 from .. import oauth2
 import boto3
 import json
 from datetime import datetime
 import os
-from dotenv import load_dotenv   
+from dotenv import load_dotenv
 from ..utils import get_post_owner_preference, send_web_push, is_valid_push_subscription
+
 load_dotenv()
 
-# sqs_client = boto3.client(
-#     "sqs",
-#     region_name="us-east-1",
-#     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-#     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
-# )
-# ses_client = boto3.client(
-#     "ses",
-#     region_name="us-east-1",
-#     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-#     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
-# )
-# sns_client = boto3.client(
-#     "sns",
-#     region_name="us-east-1",
-#     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-#     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
-# )
-sqs_client = boto3.client("sqs", region_name="us-east-1") 
+sqs_client = boto3.client("sqs", region_name="us-east-1")
 ses_client = boto3.client("ses", region_name="us-east-1")
 sns_client = boto3.client("sns", region_name="us-east-1")
 
@@ -46,24 +29,37 @@ router = APIRouter(
     tags=["Votes"]
 )
 
-@router.post("",status_code=status.HTTP_201_CREATED)
-def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
+@router.post("", status_code=status.HTTP_201_CREATED)
+def vote(
+    vote: schema.Vote,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(oauth2.get_current_user)
+):
     post = db.query(models.Post).filter(models.Post.id == vote.post_id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {vote.post_id} not found")
+
     post_owner = db.query(models.User).filter(models.User.id == post.user_id).first()
     post_owner_email = post_owner.email
 
-    vote_query = db.query(models.Vote).filter(models.Vote.post_id == vote.post_id, models.Vote.user_id == current_user.id)
+    vote_query = db.query(models.Vote).filter(
+        models.Vote.post_id == vote.post_id,
+        models.Vote.user_id == current_user.id
+    )
     found_vote = vote_query.first()
-    
-    # Get post owner's preferences including push notification details
+
+    # Determine user action for message
+    if vote.dir == 1:
+        action = "liked" if not found_vote else "tried to vote again on"
+    else:
+        action = "removed their vote from" if found_vote else "tried to unvote a non-voted post"
+
+    # Get post owner's notification preferences
     preference = get_post_owner_preference(db, post.user_id)
     if not preference:
         return {"message": f"No preference found for the post owner {post_owner.id}"}
 
-    # Prepare notification message
-    action = "liked" if vote.dir == 1 else "removed their vote from"
+    # Build the notification message
     message = {
         "post_owner_email_id": post_owner_email,
         "voter_email_id": current_user.email,
@@ -71,7 +67,7 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
         "post_id": post.id,
         "vote_direction": vote.dir,
         "timestamp": str(datetime.now()),
-        "notification_title": f"Vote Notification",
+        "notification_title": "Vote Notification",
         "notification_body": f"{current_user.email} has {action} your post: {post.title}",
         "preference": {
             "sms_enabled": preference.sms_enabled,
@@ -82,9 +78,10 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
             "push_endpoint": preference.push_endpoint,
             "push_p256dh": preference.push_p256dh,
             "push_auth": preference.push_auth
-
         }
     }
+
+    # Send push notification if available
     if is_valid_push_subscription(preference):
         subscription_info = {
             "endpoint": preference.push_endpoint,
@@ -104,25 +101,24 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
         else:
             print(f"[Push Success] Sent to {post_owner_email}")
 
+    # Always send message to SQS
+    sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
+
+    # Perform DB logic after notification
     if vote.dir == 1:
         if found_vote:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, 
-                              detail=f"user {current_user.id} has already voted on post {vote.post_id}")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail=f"user {current_user.id} has already voted on post {vote.post_id}")
         new_vote = models.Vote(post_id=vote.post_id, user_id=current_user.id)
         db.add(new_vote)
         db.commit()
-        # Send notification
-        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
         return {"message": f"Post was liked by user {current_user.id}"}
     else:
         if not found_vote:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vote does not exist")
         vote_query.delete(synchronize_session=False)
         db.commit()
-        # Send notification
-        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
         return {"message": f"Vote was removed by user {current_user.id}"}
-    
 
 def purge_queue():
     try:
@@ -130,6 +126,3 @@ def purge_queue():
         print("Queue purged successfully")
     except Exception as e:
         print(f"Error purging queue: {str(e)}")
-    
-    
-    
