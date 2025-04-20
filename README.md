@@ -6,7 +6,7 @@ This project implements a fully serverless and secure static web application inf
 All AWS Lambda functions are deployed and managed using **GitHub Actions** to enable a seamless CI/CD pipeline.
 
 ### 🧠 Lambda Functions Used
-- **FastAPI Lambda (API Gateway Integration)**: Serves the main backend API for authentication, posts, votes, and user preferences.
+- **FastAPI Lambda**: Serves the main backend API for authentication, posts, votes, and user preferences.
 - **vote-processor-lambda**:
   - Triggered via SQS queue.
   - Processes vote events (like/dislike).
