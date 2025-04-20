@@ -49,68 +49,58 @@ router = APIRouter(
 @router.post("",status_code=status.HTTP_201_CREATED)
 def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
     post = db.query(models.Post).filter(models.Post.id == vote.post_id).first()
-    print(post)
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {vote.post_id} not found")
     post_owner = db.query(models.User).filter(models.User.id == post.user_id).first()
     post_owner_email = post_owner.email
-    # print(f"Post ID: {post.id}")
-    # print(f"Post owner ID: {post.user_id}")
-    # print(f"Post owner email: {post_owner_email}")
-    # print(f"Current user email: {current_user.email}")
+
     vote_query = db.query(models.Vote).filter(models.Vote.post_id == vote.post_id, models.Vote.user_id == current_user.id)
     found_vote = vote_query.first()
+    
+    # Get post owner's preferences including push notification details
+    preference = get_post_owner_preference(db, post.user_id)
+    if not preference:
+        return {"message": f"No preference found for the post owner {post_owner.id}"}
+
+    # Prepare notification message
+    action = "liked" if vote.dir == 1 else "removed their vote from"
+    message = {
+        "post_owner_email_id": post_owner_email,
+        "voter_email_id": current_user.email,
+        "post_title": post.title,
+        "post_id": post.id,
+        "vote_direction": vote.dir,
+        "timestamp": str(datetime.now()),
+        "notification_title": f"Vote Notification",
+        "notification_body": f"{current_user.email} has {action} your post: {post.title}",
+        "preference": {
+            "sms_enabled": preference.sms_enabled,
+            "phone_number": preference.phone_number,
+            "webhook_enabled": preference.webhook_enabled,
+            "webhook_url": preference.webhook_url,
+            "push_enabled": preference.push_enabled,
+            "push_subscription": preference.push_subscription if hasattr(preference, 'push_subscription') else None
+        }
+    }
+
     if vote.dir == 1:
         if found_vote:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"user {current_user.id} has already voted on post {vote.post_id}")
-        new_vote = models.Vote(post_id = vote.post_id, user_id = current_user.id)
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, 
+                              detail=f"user {current_user.id} has already voted on post {vote.post_id}")
+        new_vote = models.Vote(post_id=vote.post_id, user_id=current_user.id)
         db.add(new_vote)
         db.commit()
-        preference = get_post_owner_preference(db,post_owner.id)
-        if preference:
-            message = {
-            "post_owner_email_id": post_owner_email,
-            "voter_email_id": current_user.email,
-            "post_title": post.title,
-            "post_id": post.id,
-            "vote_direction": vote.dir,
-            "timestamp": str(datetime.now()),  # Add timestamp to ensure message uniqueness
-            "preference": {
-                    "sms_enabled": preference.sms_enabled,
-                    "phone_number": preference.phone_number,
-                    "webhook_enabled": preference.webhook_enabled,
-                    "webhook_url": preference.webhook_url
-                }
-        }
-            sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
-            return {"message": f"Post was liked by the user {current_user.id}"}
-        else:
-            return {"message": f"No preference found for the post owner {post_owner.id}"}
-        
-        
+        # Send notification
+        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
+        return {"message": f"Post was liked by user {current_user.id}"}
     else:
         if not found_vote:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vote does not exist")
         vote_query.delete(synchronize_session=False)
         db.commit()
-        preference = get_post_owner_preference(db,post_owner.id)
-        message = {
-                "post_owner_email_id": post_owner_email,
-                "voter_email_id": current_user.email,
-                "post_title": post.title,
-                "post_id": post.id,
-                "vote_direction": vote.dir,
-                "preference": {
-
-                    "sms_enabled": preference.sms_enabled,
-                    "webhook_enabled": preference.webhook_enabled,
-                    "webhook_url": preference.webhook_url,
-                    "phone_number": preference.phone_number
-                }
-        }
-        print(message)
+        # Send notification
         sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
-        return {"message": f"Post was disliked by the user{current_user.id}"}
+        return {"message": f"Vote was removed by user {current_user.id}"}
     
 
 def purge_queue():
