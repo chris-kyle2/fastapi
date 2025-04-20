@@ -23,14 +23,15 @@ def get_vapid_private_key(secret_name: str = "vapid_private_key"):
     return response["SecretString"]
 
 def send_web_push(subscription_info: dict, payload: dict):
-    vapid_private_key = get_vapid_private_key()
-    print(vapid_private_key)
+    vapid_private_key = os.getenv('VAPID_PRIVATE_KEY')
+    if not vapid_private_key:
+        return {"status": "error", "message": "Missing VAPID_PRIVATE_KEY", "http_code": 500}
 
     try:
         webpush(
             subscription_info=subscription_info,
             data=json.dumps(payload),
-            vapid_private_key=os.getenv('VAPID_PRIVATE_KEY'),
+            vapid_private_key=vapid_private_key,
             vapid_claims={"sub": "mailto:adarshpandey57@gmail.com"}
         )
         return {"status": "sent"}
@@ -40,4 +41,13 @@ def send_web_push(subscription_info: dict, payload: dict):
             "message": str(ex),
             "http_code": ex.response.status_code if ex.response else 500
         }
-    
+def is_valid_push_subscription(preference: models.NotificationPreferences) -> bool:
+    """
+    Check if the preference contains all required fields for push notification.
+    """
+    return all([
+        preference.push_enabled,
+        preference.push_endpoint,
+        preference.push_p256dh,
+        preference.push_auth
+    ])

@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 import os
 from dotenv import load_dotenv   
-from ..utils import get_post_owner_preference
+from ..utils import get_post_owner_preference, send_web_push, is_valid_push_subscription
 load_dotenv()
 
 # sqs_client = boto3.client(
@@ -79,9 +79,30 @@ def vote(vote: schema.Vote, db: Session = Depends(get_db), current_user: models.
             "webhook_enabled": preference.webhook_enabled,
             "webhook_url": preference.webhook_url,
             "push_enabled": preference.push_enabled,
-            "push_subscription": preference.push_subscription if hasattr(preference, 'push_subscription') else None
+            "push_endpoint": preference.push_endpoint,
+            "push_p256dh": preference.push_p256dh,
+            "push_auth": preference.push_auth
+
         }
     }
+    if is_valid_push_subscription(preference):
+        subscription_info = {
+            "endpoint": preference.push_endpoint,
+            "keys": {
+                "p256dh": preference.push_p256dh,
+                "auth": preference.push_auth
+            }
+        }
+        payload = {
+            "title": "Vote Notification",
+            "body": message["notification_body"],
+            "url": f"/posts/{post.id}"
+        }
+        push_result = send_web_push(subscription_info, payload)
+        if push_result["status"] == "error":
+            print(f"[Push Error] {push_result['message']}")
+        else:
+            print(f"[Push Success] Sent to {post_owner_email}")
 
     if vote.dir == 1:
         if found_vote:
