@@ -1,4 +1,4 @@
-name: Deploy FastAPI and Lambdas
+name: Deploy FastAPI and Lambda
 
 on:
   push:
@@ -21,14 +21,14 @@ jobs:
           python-version: 3.9
 
       # Step 3: Cache dependencies
-      - name: Cache Python dependencies
-        id: cache-deps
+      - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
-          path: ./.venv
-          key: deps-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            deps-
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Remove old virtualenv if exists
+        run: rm -rf .venv
 
       # Step 4: Install dependencies
       - name: Install dependencies
