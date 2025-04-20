@@ -34,7 +34,9 @@ def send_web_push(subscription_info: dict, payload: dict):
             vapid_private_key=vapid_private_key,
             vapid_claims={"sub": "mailto:adarshpandey57@gmail.com"}
         )
-        return {"status": "sent"}
+        print("[Push Debug] Sent notification to:", subscription_info.get("endpoint"))
+        return {"status": "success"}
+
     except WebPushException as ex:
         return {
             "status": "error",
