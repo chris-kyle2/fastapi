@@ -43,16 +43,6 @@ async def log_request(request: Request, call_next):
         logger.error(traceback.format_exc())
         raise
 
-# Add custom CORS headers for Lambda Function URL
-@app.middleware("http")
-async def add_cors_headers(request, call_next):
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "https://d1dnaki3okqf9b.cloudfront.net"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
-    return response
-
 # Include all routers
 app.include_router(post.router)
 app.include_router(user.router)
@@ -65,22 +55,41 @@ app.include_router(push.router)
 # AWS Lambda handler
 handler = Mangum(app, lifespan="off")
 
-# Add CORS headers to the Lambda handler
+# Lambda handler with CORS headers
 def lambda_handler(event, context):
+    # Log the incoming event
+    logger.info(f"Lambda event: {json.dumps(event)}")
+    
+    # Check if it's a preflight request
+    if event.get('requestContext', {}).get('http', {}).get('method') == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': 'https://d1dnaki3okqf9b.cloudfront.net',
+                'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                'Access-Control-Allow-Credentials': 'true'
+            }
+        }
+    
+    # Handle the actual request
     response = handler(event, context)
+    
+    # Log the response
+    logger.info(f"Lambda response: {json.dumps(response)}")
     
     # Ensure response is a dictionary
     if isinstance(response, dict):
-        # Add CORS headers to the response
+        # Add CORS headers only if they don't exist
         if "headers" not in response:
             response["headers"] = {}
-            
-        response["headers"].update({
-            "Access-Control-Allow-Origin": "https://d1dnaki3okqf9b.cloudfront.net",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Authorization, Content-Type"
-        })
+        
+        # Only set CORS headers if they're not already present
+        if "Access-Control-Allow-Origin" not in response["headers"]:
+            response["headers"]["Access-Control-Allow-Origin"] = "https://d1dnaki3okqf9b.cloudfront.net"
+            response["headers"]["Access-Control-Allow-Credentials"] = "true"
+            response["headers"]["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            response["headers"]["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
     
     return response
 
