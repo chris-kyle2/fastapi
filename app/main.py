@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # CORS middleware configuration
-origins = ["*"]
+origins = ["https://d1dnaki3okqf9b.cloudfront.net"]
 
 app.add_middleware(
     CORSMiddleware,
