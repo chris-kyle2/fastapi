@@ -6,6 +6,7 @@ import logging
 import json
 from .config import settings
 import traceback
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -23,6 +24,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Request logging middleware with error handling
@@ -41,6 +43,16 @@ async def log_request(request: Request, call_next):
         logger.error(traceback.format_exc())
         raise
 
+# Add custom CORS headers for Lambda Function URL
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "https://d1dnaki3okqf9b.cloudfront.net"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+    return response
+
 # Include all routers
 app.include_router(post.router)
 app.include_router(user.router)
@@ -52,5 +64,24 @@ app.include_router(push.router)
 
 # AWS Lambda handler
 handler = Mangum(app, lifespan="off")
+
+# Add CORS headers to the Lambda handler
+def lambda_handler(event, context):
+    response = handler(event, context)
+    
+    # Ensure response is a dictionary
+    if isinstance(response, dict):
+        # Add CORS headers to the response
+        if "headers" not in response:
+            response["headers"] = {}
+            
+        response["headers"].update({
+            "Access-Control-Allow-Origin": "https://d1dnaki3okqf9b.cloudfront.net",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Authorization, Content-Type"
+        })
+    
+    return response
 
 
