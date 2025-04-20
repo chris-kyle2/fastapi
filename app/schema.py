@@ -63,6 +63,10 @@ class NotificationPreferenceResponse(BaseModel):
     webhook_enabled: bool
     webhook_url: Optional[str] = None
     phone_number: Optional[str] = None
+    push_enabled: bool
+    push_endpoint: Optional[str] = None
+    push_p256dh: Optional[str] = None
+    push_auth: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     class Config:
