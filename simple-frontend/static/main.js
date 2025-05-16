@@ -33,15 +33,20 @@ const API_URL = (() => {
 
 const VAPID_PUBLIC_KEY = 'BGrvddJ7X5ycoFZKGRLBKtwQU0SVlv2C8V10ppAzek4_mDvxfWWswb0MSoE-8-4TBfDWl9uH7xJhjd6GEfPHaOo=';
 
+// Initialize Bootstrap Modal
+const authModal = new bootstrap.Modal(document.getElementById('authModal'));
+
 // Toggle Auth Forms
 document.getElementById('loginBtn').addEventListener('click', () => {
-    document.getElementById('loginForm').classList.toggle('hidden');
+    document.getElementById('loginForm').classList.remove('hidden');
     document.getElementById('registerForm').classList.add('hidden');
+    authModal.show();
 });
 
 document.getElementById('registerBtn').addEventListener('click', () => {
-    document.getElementById('registerForm').classList.toggle('hidden');
+    document.getElementById('registerForm').classList.remove('hidden');
     document.getElementById('loginForm').classList.add('hidden');
+    authModal.show();
 });
 
 // Register Handler
@@ -88,7 +93,7 @@ document.getElementById('loginFormData').addEventListener('submit', async (e) =>
         if (res.ok) {
             const data = await res.json();
             token = data.access_token;
-            document.getElementById('loginForm').classList.add('hidden');
+            authModal.hide(); // Hide the modal after successful login
             document.getElementById('createPostForm').classList.remove('hidden');
             document.getElementById('notificationPrefs').classList.remove('hidden');
             fetchPosts();

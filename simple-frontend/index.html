@@ -32,7 +32,7 @@
     </script>
     <style>
         .hidden {
-            display: none;
+            display: none !important;
         }
         .post-card {
             margin-bottom: 20px;
@@ -57,6 +57,20 @@
             max-width: 300px;
             z-index: 9999;
         }
+        
+        #authForms .card {
+            transition: all 0.3s ease;
+        }
+        
+        #authForms .card:not(.hidden) {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -71,41 +85,119 @@
     </nav>
 
     <div class="container mt-4">
-        <!-- Auth Forms -->
-        <div id="authForms">
-            <!-- Register Form -->
-            <div class="card mb-4 hidden" id="registerForm">
-                <div class="card-header">Register</div>
-                <div class="card-body">
-                    <form id="registerFormData">
-                        <div class="mb-3">
-                            <label for="regEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="regEmail" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="regPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="regPassword" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Register</button>
-                    </form>
+        <!-- Project Description -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Performant Static Website on AWS With Scalable Notification System</h2>
+                <p class="card-text lead">
+                    A scalable notification system with real-time push notifications, scheduled notifications, and customizable preferences, 
+                    powered by Serverless (AWS Lambda), AWS SNS, SQS, RDS(PostgreSQL), CloudFront, CloudWatch, AWS WAF, S3, Route 53 and EventBridge.
+                </p>
+
+                <h4 class="mt-4">Tech Stack:</h4>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle-fill text-success"></i> Python</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> FastAPI</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> AWS RDS</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> SNS</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> SQS</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> Lambda</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle-fill text-success"></i> EventBridge</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> SES</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> CloudFront</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> CloudWatch</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> AWS WAF</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> S3</li>
+                            <li><i class="bi bi-check-circle-fill text-success"></i> Route 53</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4 class="mt-4">Key Features:</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <i class="bi bi-arrow-repeat text-primary"></i> <strong>Web Push Notification:</strong>
+                                <p class="ms-4">In Browser Notification Using pywebpush</p>
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-phone text-primary"></i> <strong>Multi-channel notifications:</strong>
+                                <p class="ms-4">Sends alerts via SMS, email (AWS SES), and Slack</p>
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-lightning text-primary"></i> <strong>Real-time push notifications:</strong>
+                                <p class="ms-4">Uses AWS SNS and SQS for instant user updates</p>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <i class="bi bi-clock text-primary"></i> <strong>Scheduled notifications:</strong>
+                                <p class="ms-4">Implements AWS EventBridge for milestone reminders, likes, and promotional messages</p>
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-gear text-primary"></i> <strong>Customizable preferences:</strong>
+                                <p class="ms-4">Users can choose their preferred notification channels</p>
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-envelope-x text-primary"></i> <strong>Dead Letter Queue:</strong>
+                                <p class="ms-4">Handles undelivered messages with a dead letter queue</p>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Login Form -->
-            <div class="card mb-4 hidden" id="loginForm">
-                <div class="card-header">Login</div>
-                <div class="card-body">
-                    <form id="loginFormData">
-                        <div class="mb-3">
-                            <label for="loginEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="loginEmail" required>
+        <!-- Auth Forms Modal -->
+        <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <!-- Register Form -->
+                    <div class="modal-body hidden" id="registerForm">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="authModalLabel">Register</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="mb-3">
-                            <label for="loginPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="loginPassword" required>
+                        <form id="registerFormData">
+                            <div class="mb-3">
+                                <label for="regEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="regEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="regPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="regPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Register</button>
+                        </form>
+                    </div>
+
+                    <!-- Login Form -->
+                    <div class="modal-body hidden" id="loginForm">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="authModalLabel">Login</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <button type="submit" class="btn btn-primary">Login</button>
-                    </form>
+                        <form id="loginFormData">
+                            <div class="mb-3">
+                                <label for="loginEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="loginEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="loginPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="loginPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -177,6 +269,9 @@
         <div>Push Subscription: <span id="push-status">checking...</span></div>
     </div>
 
+    <!-- Add Bootstrap JS and Popper.js before closing body tag -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
     <script src="/static/main.js"></script>
     <script>
         // Show debug info in development
